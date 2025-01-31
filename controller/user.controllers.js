@@ -23,11 +23,18 @@ const registerUser = asyncHandler(async(req,res)=>{
      })
      if(existedUser)
      {
-        throw new ApiError(409,"Username and email are already exist")
+            throw new ApiError(409,"Username and email are already exist")
+     
      }
 
      const avatarLocalPath  = req.files?.avatar[0]?.path
-     const coverLocalPath = req.files?.coverimage[0]?.path
+     let coverLocalPath;
+
+
+     if(req.files && Array.isArray(req.files.coverimage) && req.files.coverimage.length > 0)
+     {
+       coverLocalPath =  req.files.coverimage[0].path
+     }
 
      if(!avatarLocalPath)
      {
@@ -35,6 +42,9 @@ const registerUser = asyncHandler(async(req,res)=>{
      }
     const avatar =  await uploadOnCloudinary(avatarLocalPath);
     const coverImage =  await uploadOnCloudinary(coverLocalPath);
+
+
+
 
     if(!avatar)
     {
@@ -66,4 +76,64 @@ const registerUser = asyncHandler(async(req,res)=>{
 })
 
 
-export {registerUser}
+const loginUser = asyncHandler(async(req,res)=>{
+    // first username or email get from the frontend
+    // check both are exist or not
+    // if both are exist return the username or email and also generate the access token as well as 
+
+
+ 
+
+    const {email,password,username} = req.body
+
+    if(!(email || username))
+    {
+        throw new ApiError(404,"Username and password is required")
+    }
+    const user = await User.findOne({
+        $or:[{email},{username}]
+    })
+
+
+
+
+    if(!user)
+    {
+        console.log("Complete")
+        throw new ApiError(404,"User does not exist..")
+    }
+    const passwordCheck = await user.isPasswordCorrect(password)
+    if(!passwordCheck)
+    {
+        console.log("Complete")
+        throw new ApiError(404,"Password is incorrect")
+    }
+
+    // now its time to generate the Token 
+
+    const token = await user.generateAccessToken();
+    const createuser = await User.findById(user?._id).select("-password -watchHistroy")
+    let options={
+        httpOnly:true,
+        secure:true,
+    }
+ 
+    res.status(200).cookie("token",token,options).json(new ApiResolve(200,
+        {userData:createuser,token},"User logged in Successfully"
+    ))
+
+
+   
+})
+
+const logOut = asyncHandler(async(req,res)=>{
+    // first clear the cookies
+    const options={
+        httpOnly:true,
+        secure:true,
+    }
+    return res.status(200).clearCookie("token",options).json(new ApiResolve(200,{},"User Log out."))
+})
+
+
+export {registerUser,loginUser,logOut}

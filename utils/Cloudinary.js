@@ -18,6 +18,7 @@ const uploadOnCloudinary = async (localFilePath)=>{
        const response =  await cloudinary.uploader.upload(localFilePath,{
             resource_type:"auto"
         })
+        // this unlink is used when file are upload on cloudinary then also file will delete
          fs.unlinkSync(localFilePath)
         return response
     } catch (error) {
