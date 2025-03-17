@@ -10,8 +10,7 @@ A scalable backend for a YouTube-like video streaming platform, built with **Nod
 ✅ Video upload & streaming with **Cloudinary** integration  
 ✅ Like, comment, and subscription functionality  
 ✅ **Centralized API error handling** using a custom `errorHandling.js` utility  
-✅ RESTful APIs with proper authentication and rate-limiting  
-✅ Real-time notifications using **Socket.IO**  
+✅ RESTful APIs with proper authentication
 
 ---
 
@@ -19,8 +18,7 @@ A scalable backend for a YouTube-like video streaming platform, built with **Nod
 
 - **Backend:** Node.js, Express.js, MongoDB  
 - **Authentication:** JWT (JSON Web Token)  
-- **File Uploads:** Multer (for video uploads), Cloudinary (for storage)  
-- **Real-time Features:** Socket.IO  
+- **File Uploads:** Multer (for video uploads), Cloudinary (for storage)    
 - **Error Handling:** Centralized API error handling  
 
 ---
