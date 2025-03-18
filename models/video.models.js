@@ -9,15 +9,17 @@ const VideoSchema = new Schema({
     },
     description:{
         type:String,
-        required:true,
         trim:true,
-        minlength:100
     },
     videoUrl:{
         type:String,
         required:true,
     },
-    user:{
+    duration: {
+        type: Number,    // Store duration in seconds (e.g., 300 = 5 mins)
+    },
+    thumbnailUrl: { type: String },  // 🟡 New field for thumbnail
+    owner:{
         type:Schema.Types.ObjectId,
         ref:"User",
         required:true,
@@ -31,12 +33,14 @@ const VideoSchema = new Schema({
      ref:"Comment"   
     }],
     likes: {
-        type: Number,
-        default: 0
+        type: [mongoose.Schema.Types.ObjectId],  // ✅ Ensure array of ObjectIds
+        ref: "User",
+        default: []
     },
     dislikes: {
-        type: Number,
-        default: 0
+        type: [mongoose.Schema.Types.ObjectId],  // ✅ Ensure array of ObjectIds
+        ref: "User",
+        default: []
     },
     views: {
         type: Number,
@@ -46,6 +50,7 @@ const VideoSchema = new Schema({
         type: Boolean,
         default: true  // Video privacy, true = public, false = private
     },
+    format:{type:String},
     updateAt:{
         type:Date,
         default:Date.now,

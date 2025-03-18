@@ -3,6 +3,8 @@ import {ApiError} from "../utils/ApiError.js"
 import {User} from "../models/users.models.js"
 import uploadOnCloudinary from "../utils/Cloudinary.js"
 import {ApiResolve} from "../utils/ApiResolve.js"
+import { Video } from "../models/video.models.js"
+import { UploadVideo } from "../models/UploadVideos.models.js"
 const registerUser = asyncHandler(async(req,res)=>{
     //get user detail from frontend;
     //validation - not emtpy
@@ -242,4 +244,292 @@ return res.status(200).json(new ApiResolve(200,{},"Cover Image are updated.."))
 
 })
 
-export {registerUser,loginUser,logOut,changeCurrentPassword,getUser,updateAccountDetails,updateAvtarFile,updateCoverImage}
+
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+   try {
+     const {username} = req.params
+ 
+     if(!username?.trim())
+     {
+         throw new ApiError(400,"Username is missing ")
+     }
+ 
+     const userChannel = await User.aggregate([
+         {
+             $match:username?.toLowerCase()
+         },
+         {
+             $lookup:{
+                 from:"subscriptions",
+                 localField:"_id",
+                 foreignField:"channel",
+                 as:"subscribers"
+             }
+         },
+         {
+             $lookup:{
+                 from:"subscriptions",
+                 localField:"_id",
+                 foreignField:"subscriber",
+                 as:"subscribedTo"
+             }
+         },
+ 
+         {
+             $addFields:{
+                 subscriberCount:{
+                     $size:"$subscribers",
+                 },
+                 channelCount:{
+                     $size:"$subscribedTo",
+                 },
+                 isSubscribed:{
+                     $cond:{
+                         if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                         then:true,
+                         else:false,
+                     }
+                 }
+             },
+           
+         },
+         {
+             $project:{
+                 fullname:1,
+                 username:1,
+                 subscriberCount:1,
+                 channelCount:1,
+                 isSubscribed:1,
+                 avatar:1,
+                 coverimage:1,
+                 email:1,
+             }
+         }
+         
+     ])
+ 
+     if(!userChannel.length)
+     {
+         throw new ApiError(404,"Channel doest not exists")
+     }
+ 
+     return res.status(200).josn(new ApiResolve(200,userChannel[0],"User channel feteced successfully"))
+  
+ 
+ 
+ 
+ 
+   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+   }
+
+})
+
+
+
+const uploadVideo = asyncHandler(async(req,res)=>{
+
+    try {
+        // Check if file exists
+        if (!req.file) {
+            return res.status(400).json({ message: 'No video file uploaded' });
+        }
+        const videoFile = req.file?.path;
+        const videoupload = await uploadOnCloudinary(videoFile)
+        if(!videoupload)
+        {
+            throw new ApiError(400,"Something Went wrong while uploading the Video ....")
+        }
+        // Create a new video document
+        const newVideo = new UploadVideo({
+            duration:videoupload?.duration,
+            format:videoupload?.format,
+            videoUrl: videoupload?.secure_url,
+            owner: req.user._id // Assuming user is attached to req by authMiddleware
+        });
+
+        await newVideo.save();
+
+        res.status(201).json({ message: 'Video uploaded successfully', video: newVideo });
+    } catch (error) {
+        console.error('Error uploading video:', error.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+})
+
+
+
+
+
+const createVideo = asyncHandler(async(req,res)=>{
+
+    try {
+        // Check if file exists
+        const {title,description,isPublic,tags,} = req.body;
+
+        const thumbnailUrl = req.file?.path;
+        const uploadThumbnail = await uploadOnCloudinary(thumbnailUrl);
+            
+        if(!uploadThumbnail)
+        {
+            throw new ApiError(400,"Something Went wrong while uploading the Video ....")
+        }
+        const uploadVideo = await UploadVideo.find({ owner: req.user?._id });
+        
+        
+        if(!uploadVideo)
+        {
+            throw new ApiError(400,"Uploaded Videos not found..");
+        }
+
+        // Create a new video document
+        const newVideo = new Video({
+            title:title,
+            description:description || "",
+            isPublic:isPublic || false,
+            tags:tags || "",
+            duration:uploadVideo?.duration,
+            format:uploadVideo?.format,
+            thumbnailUrl:uploadThumbnail?.secure_url,
+            videoUrl: uploadVideo[0]?.videoUrl,
+            owner: req.user._id // Assuming user is attached to req by authMiddleware
+        });
+        if(!newVideo)
+        {
+            throw new ApiError(401,"Video is not created...");
+        }
+
+        await newVideo.save();
+        
+
+        res.status(201).json({ message: 'Video uploaded successfully', video: newVideo });
+    } catch (error) {
+        console.error('Error uploading video:', error.message);
+        res.status(500).json({ message: 'Server error' });
+    }
+})
+
+const getAllVideos = asyncHandler(async(req,res)=>{
+
+
+    try {
+        const videos = await Video.aggregate([
+            {
+                $match:{isPublic:true}
+            },
+            {
+                $project:{
+                    title:1,
+                    title: 1,
+                    description: 1,
+                    thumbnailUrl: 1,
+                    duration: 1,
+                    views: 1,
+                    likes: 1,
+                    createdAt: 1,
+                    uploadedBy: 1,
+                    tags:1
+                }
+            }
+        ])
+        
+        res.status(200).json(new ApiResolve(200,{},videos))
+    } catch (error) {
+        res.status(400).json(new ApiResolve(400,"Something went wrong",error.message))
+        
+    }
+})
+
+
+
+
+
+
+
+
+
+
+
+
+const getSingleVideo = asyncHandler(async(req,res)=>{
+
+
+    try {
+        const {id} = req.params
+        if(!id)
+        {
+            throw new ApiError(400,"Can't find the Id of the video")
+        }
+        const videos = await Video.findById(id)
+        res.status(200).json(new ApiResolve(200,{},videos))
+    } catch (error) {
+        res.status(400).json(new ApiResolve(400,"Something went wrong",error.message))
+        
+    }
+})
+
+
+
+
+const likeVideo = asyncHandler(async(req,res)=>{
+
+
+    try {
+       const {id} = req.params;
+       const userId = req.user?._id;
+       const { action } = req.body; // like or dislike
+       const video  = await Video.findById(id)
+       if(!video)
+       {
+        throw new ApiError(400,"Video not found");
+       }
+
+       if (!Array.isArray(video.likes)) {
+        video.likes = [];
+    }
+    if (!Array.isArray(video.dislikes)) {
+        video.dislikes = [];
+    }
+
+       const isLiked = video.likes.includes(userId)
+       const isDislike = video.dislikes.includes(userId)
+
+
+       if (action === "like") {
+        if (isLiked) {
+            await Video.findByIdAndUpdate(id, { $pull: { likes: userId } });
+            res.status(200).json({ message: "Like removed" });
+        } else {
+            await Video.findByIdAndUpdate(id, {
+                $addToSet: { likes: userId },
+                $pull: { dislikes: userId }
+            });
+            res.status(200).json({ message: "Video liked" });
+        }
+    }
+
+    if (action === "dislike") {
+        if (isDislike) {
+            await Video.findByIdAndUpdate(id, { $pull: { dislikes: userId } });
+            res.status(200).json({ message: "Dislike removed" });
+        } else {
+            await Video.findByIdAndUpdate(id, {
+                $addToSet: { dislikes: userId },
+                $pull: { likes: userId }
+            });
+            res.status(200).json({ message: "Video disliked" });
+        }
+    }
+     
+       
+    } catch (error) {
+        res.status(400).json(new ApiResolve(400,"Something went wrong",error.message))
+        
+    }
+})
+
+
+
+
+
+export {registerUser,loginUser,logOut,changeCurrentPassword,getUser,uploadVideo,createVideo,getAllVideos,updateAccountDetails,updateAvtarFile,updateCoverImage,getUserChannelProfile,getSingleVideo,likeVideo}
