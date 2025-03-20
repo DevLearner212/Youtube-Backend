@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { loginUser, registerUser,logOut,changeCurrentPassword,getUser,createVideo,updateAccountDetails,uploadVideo,updateAvtarFile,updateCoverImage,getAllVideos,
-    getSingleVideo,likeVideo,
-
+    getSingleVideo,likeVideo,getTrendingVideos,addView,addComment,replycomment,getAllComments,editComment,deleteComment,getVideoViews,getChannelAnalytics,addToHistory,getWatchHistory,addToWatchLater,getWatchLaterVideos,removeFromWatchLater
+,getRecentVideos,getRecommendedVideos
 } from "../controller/user.controllers.js";
 import { upload } from "../middlewares/multer.middlwares.js";
 import authMiddleware from "../middlewares/auth.middlewares.js"
@@ -32,9 +32,9 @@ router.route("/videos").get(authMiddleware,getAllVideos);
 router.route('/video/:id').get(authMiddleware,getSingleVideo);  
 // router.route('/search').get(authMiddleware,searchVideos); 
 router.route('/video/:id/like').post(authMiddleware, likeVideo);
-// router.route('/trending').get(getTrendingVideos);
-// router.route('/recent').get(getRecentVideos);
-// router.route('/recommended/:id').get(getRecommendedVideos)
+router.route('/trending').get(getTrendingVideos);
+router.route('/recent').get(getRecentVideos);
+router.route('/recommended/:id').get(getRecommendedVideos)
 
 
 
@@ -45,53 +45,17 @@ router.route('/video/:id/like').post(authMiddleware, likeVideo);
 
 
 // Add a comment
-// router.route('/video/:id/comment').post(authMiddleware, addComment);
+router.route('/video/:id/comment').post(authMiddleware, addComment);
+router.route('/video/:id/replycomment').post(authMiddleware, replycomment);
 
 // // Get all comments for a video
-// router.route('/video/:id/comments').get(getAllComments);
+router.route('/video/:id/comments').get(getAllComments);
 
 // // Edit a comment
-// router.route('/comment/:id').put(authMiddleware, editComment);
+router.route('/comment/:id').put(authMiddleware, editComment);
 
 // // Delete a comment
-// router.route('/comment/:id').delete(authMiddleware, deleteComment);
-
-
-
-
-
-
-
-// ✅ 3. Playlist Routes
-
-
-
-
-// Create a playlist
-// router.route('/playlist/create').post(authMiddleware, createPlaylist);
-
-// // Add a video to a playlist
-// router.route('/playlist/:id/addVideo').post(authMiddleware, addVideoToPlaylist);
-
-// // Remove a video from a playlist
-// router.route('/playlist/:id/removeVideo').delete(authMiddleware, removeVideoFromPlaylist);
-
-// // Get all playlists by user
-// router.route('/playlists').get(authMiddleware, getAllPlaylists);
-
-// // Get a single playlist
-// router.route('/playlist/:id').get(getSinglePlaylist);
-
-// // Delete a playlist
-// router.route('/playlist/:id').delete(authMiddleware, deletePlaylist);
-
-
-
-
-
-
-
-
+router.route('/comment/:id').delete(authMiddleware, deleteComment);
 
 
 
@@ -105,19 +69,19 @@ router.route('/video/:id/like').post(authMiddleware, likeVideo);
 
 
 // // Add video to history
-// router.route('/history/add').post(authMiddleware, addToHistory);
+router.route('/history/add').post(authMiddleware, addToHistory);
 
-// // Get watch history
-// router.route('/history').get(authMiddleware, getWatchHistory);
+// Get watch history
+router.route('/history').get(authMiddleware, getWatchHistory);
 
-// // Add video to Watch Later
-// router.route('/watchlater/add').post(authMiddleware, addToWatchLater);
+// Add video to Watch Later
+router.route('/watchlater/add').post(authMiddleware, addToWatchLater);
 
-// // Get Watch Later videos
-// router.route('/watchlater').get(authMiddleware, getWatchLaterVideos);
+// Get Watch Later videos
+router.route('/watchlater').get(authMiddleware, getWatchLaterVideos);
 
-// // Remove from Watch Later
-// router.route('/watchlater/:id').delete(authMiddleware, removeFromWatchLater);
+// Remove from Watch Later
+router.route('/watchlater/:id').delete(authMiddleware, removeFromWatchLater);
 
 
 
@@ -134,13 +98,13 @@ router.route('/video/:id/like').post(authMiddleware, likeVideo);
 
 
 // Add view count when a video is played
-// router.route('/video/:id/view').post(addView);
+router.route('/video/:id/view').post(authMiddleware,addView);
 
 // // Get video views count
-// router.route('/video/:id/views').get(getVideoViews);
+router.route('/video/:id/views').get(getVideoViews);
 
 // // Get channel analytics (views, likes, comments)
-// router.route('/analytics').get(authMiddleware, getChannelAnalytics);
+router.route('/analytics').get(authMiddleware, getChannelAnalytics);
 
 
 

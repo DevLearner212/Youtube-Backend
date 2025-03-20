@@ -55,6 +55,7 @@ const VideoSchema = new Schema({
         type:Date,
         default:Date.now,
     },
+    category: { type: String },
     createAt:{
         type:Date,
         default:Date.now,
